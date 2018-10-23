@@ -33,7 +33,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function wktToGeom($wkt)
     {
-        $json = self::wktToJson();
+        $json = self::wktToJson($wkt);
         return json_decode($json);
     }
 
