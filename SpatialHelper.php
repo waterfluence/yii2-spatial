@@ -14,413 +14,339 @@ namespace sjaakp\spatial;
 /**
  * Class SpatialHelper
  * @package sjaakp\spatial
- * Converts between:
- * - geometry (PHP array)
- * - feature (PHP array)
- * - Well-Known Text (used by MySQL)
- * - GeoJSON (used by Leaflet)
  *
- * Geometry and feature are 'decoded GeoJson'. They are formatted like:
- * [
- *  'type' => 'Point',
- *  'coordinates' => [ lng, lat ]
- * ]
- * (Notice: Leaflet uses [ lat, lng ] internally)
+ * Uses geoPHP to handle conversions. Previous code was
+ * based on the older GeoJSON specification
  *
  * @link http://geojson.org/geojson-spec.html
  * @link http://dev.mysql.com/doc/refman/5.6/en/gis-data-formats.html#gis-wkt-format
  *
  */
 use yii\helpers\Json;
+use geoPHP;
 
 abstract class SpatialHelper { // declare abstract, we don't want instances (trick from Zend)
 
-    protected static function implodePoint($pntArray)  {
-        return implode(' ', $pntArray);
+    /**
+     * @param $wkt
+     * @return mixed
+     */
+    public static function wktToGeom($wkt)
+    {
+        $json = self::wktToJson();
+        return json_decode($json);
     }
 
-    protected static function implodePoints($pntsArray)    {
-        return implode(',', array_map('static::implodePoint', $pntsArray));
+    /**
+     * @param $geom
+     * @return mixed
+     */
+    public static function geomToWkt($geom)
+    {
+        $json = json_encode($geom);
+        return self::jsonToWkt($json);
     }
 
-    protected static function implodeLines($lnsArray)    {
-        return implode(',', array_map(function($v){ return '(' . static::implodePoints($v) . ')'; }, $lnsArray));
+    /**
+     * See:
+     * https://github.com/phayes/geoPHP/wiki/Example-format-converter
+     */
+
+    /**
+     * @param $wkt
+     * @return mixed
+     */
+    public static function wktToJson($wkt)
+    {
+        $geom = geoPHP::load($wkt,'wkt');
+        return $geom->out('json');
     }
 
-    protected static function explodePoint($pnt)    {
-        return array_map('floatval', explode(' ', $pnt));
+    /**
+     * @param $json
+     * @return mixed
+     */
+    public static function jsonToWkt($json)
+    {
+        $geom = geoPHP::load($json,'json');
+        return $geom->out('wkt');
     }
 
-    protected static function explodePoints($pntsWkt)    {
-        return array_map(function($v) {
-            return static::explodePoint($v);
-        }, $pntsWkt);
+    /**
+     * @param $wkt
+     * @return mixed
+     */
+    public static function wktToKml($wkt)
+    {
+        $geom = geoPHP::load($wkt,'wkt');
+        return $geom->out('kml');
     }
 
-    protected static function explodeLines($lnsWkt)    {
-        return array_map(function($v) {
-            $matches = [];
-            return preg_match_all('/([-\d. ]+)/', $v, $matches) ? static::explodePoints($matches[1]) : [];
-        }, $lnsWkt);
+    /**
+     * @param $wkt
+     * @return mixed
+     */
+    public static function wktToAaddress($wkt)
+    {
+        $geom = geoPHP::load($wkt,'wkt');
+        return $geom->out('google_geocode');
     }
 
-    public static function geomToWkt($geom)   {
-        $r = '';
-        if (! empty($geom)) {
-//            if ($array['type'] == 'Feature') $array = $array['geometry'];
-            $r = strtoupper($geom['type']);
-            if ($r == 'GEOMETRYCOLLECTION') {
-                $d = $geom['geometries'];
-                $r .= empty($d) ? ' EMPTY' : '(' . implode(',', array_map('static::geomToWkt', $d)) . ')';
-            }
-            else {
-                $d = $geom['coordinates'];
-                if (empty($d)) {
-                    $r .= ' EMPTY';
-                } else {
-                    switch ($r) {
-                        case 'POINT':
-                            $r .= '(' . static::implodePoint($d) . ')';
-                            break;
-
-                        case 'LINESTRING':
-                        case 'MULTIPOINT':
-                            $r .= '(' . static::implodePoints($d) . ')';
-                            break;
-
-                        case 'POLYGON':
-                        case 'MULTILINESTRING':
-                            $r .= '(' . static::implodeLines($d) . ')';
-                            break;
-
-                        case 'MULTIPOLYGON':
-                            $r .= '(' . implode(',', array_map(function ($v) {
-                                            return '(' . static::implodeLines($v) . ')';
-                                        }, $d)) . ')';
-                            break;
-
-                        default:
-                            $r .= ' not implemented';
-                            break;
-                    }
-                }
-            }
-        }
-        return $r;
+    /**
+     * @param $wkt
+     * @return mixed
+     */
+    public static function wktToGpx($wkt)
+    {
+        $geom = geoPHP::load($wkt,'wkt');
+        return $geom->out('gpx');
     }
 
-    public static function wktToGeom($wkt) {
-        $cases = [
-            'POINT' => 'Point',
-            'MULTIPOINT' => 'MultiPoint',
-            'LINESTRING' => 'LineString',
-            'MULTILINESTRING' => 'MultiLineString',
-            'POLYGON' => 'Polygon',
-            'MULTIPOLYGON' => 'MultiPolygon',
-            'GEOMETRYCOLLECTION' => 'GeometryCollection'
-        ];
-        $r = [];
-        $matches = [];
-        if (preg_match('/([^( ]+)/', $wkt, $matches))    {
-            $type = $matches[1];
-            $r['type'] = $cases[$type];
-            $data = [];
-            $prop = 'coordinates';
-            if (strpos($wkt, 'EMPTY') === FALSE) {
-                switch ($type) {
-                    case 'POINT':
-                        if (preg_match('/([-\d. ]+)/', $wkt, $matches))
-                            $data = static::explodePoint($matches[1]);
-                        break;
-
-                    case 'LINESTRING':
-                    case 'MULTIPOINT':
-                        if (preg_match_all('/([-\d. ]+)/', $wkt, $matches))
-                            $data = static::explodePoints($matches[1]);
-                        break;
-
-                    case 'POLYGON':
-                    case 'MULTILINESTRING':
-                        if (preg_match_all('/\(([-\d., ]+)/', $wkt, $matches))
-                            $data = static::explodeLines($matches[1]);
-                        break;
-
-                    case 'MULTIPOLYGON':
-                        if (preg_match_all('/\(?(\({2}.*?\){2})/', $wkt, $matches)) {
-                            $data = array_map(function($v) {
-                                $pmatches = [];
-                                return preg_match_all('/\(([-\d., ]+)/', $v, $pmatches) ? static::explodeLines($pmatches[1]) : [];
-                            }, $matches[1]);
-                        }
-                        break;
-
-                    case 'GEOMETRYCOLLECTION':
-                        $prop = 'geometries';
-                        if (preg_match_all('/([A-Z]+[^A-Z]*)/', substr($wkt, 19, -1), $matches)) {
-                            $data = array_map('static::wktToGeom', $matches[1]);
-                        }
-                        break;
-
-                    default:
-                        break;
-                }
-            }
-            $r[$prop] = $data;
-        }
-
-        return $r;
+    /**
+     * @param $wkt
+     * @return mixed
+     */
+    public static function wktToGeorss($wkt)
+    {
+        $geom = geoPHP::load($wkt,'wkt');
+        return $geom->out('georss');
     }
 
-    public static function featureToGeom($feat)    {
-        if ($feat)  {
-            switch ($feat['type'])  {
-                case 'Feature':
-                    $feat = $feat['geometry'];
-                    break;
-
-                case 'FeatureCollection':
-                    $features = $feat['features'];
-                    if (count($features) == 1) $feat = current($features)['geometry'];
-                    else $feat = [
-                        'type' => 'GeometryCollection',
-                        'geometries' => array_map(function($v) { return $v['geometry']; }, $features)
-                    ];
-                    break;
-
-                case 'Point':
-                case 'MultiPoint':
-                case 'LineString':
-                case 'MultiLineString':
-                case 'Polygon':
-                case 'MultiPolygon':
-                case 'GeometryCollection':
-                    break;      // it is already a geometry; return unchanged
-
-                default:
-                    $feat = null;   // don't understand
-                    break;
-            }
-        }
-        return $feat;
+    /**
+     * @param $json
+     * @return mixed
+     */
+    public static function jsonToKml($json) {
+        $geom = geoPHP::load($json,'json');
+        return $geom->out('kml');
     }
 
-    public static function geomToFeature($geom, $properties = []) {
-        if ($geom)  {
-            switch ($geom['type'])  {
-                case 'Point':
-                case 'MultiPoint':
-                case 'LineString':
-                case 'MultiLineString':
-                case 'Polygon':
-                case 'MultiPolygon':
-                    $geom = [
-                        'type' => 'Feature',
-                        'geometry' => $geom,
-                        'properties' => $properties
-                    ];
-                    break;
-
-                case 'GeometryCollection':
-                    $geoms = $geom['geometries'];
-                    if (count($geoms) == 1) {
-                        $geom = [   // if collection has one item, return it as a Feature
-                            'type' => 'Feature',
-                            'geometry' => current($geoms),
-                            'properties' => $properties
-                        ];
-                    }
-                    else {
-                        // compile a FeatureCollection and return it
-                        $feats = [];
-                        foreach ($geoms as $g) {
-                            $feats[] = [
-                                'type' => 'Feature',
-                                'geometry' => $g,
-                                'properties' => $properties
-                            ];
-                        }
-                        $geom = [
-                            'type' => 'FeatureCollection',
-                            'features' => $feats
-                        ];
-
-/*                          // collection has more items (or zero)
-                                // see if they are all of the same type
-                        $type = false;
-                        foreach ($geoms as $g) {
-                            if (! $type) $type = $g['type'];
-                            elseif ($type != $g['type']) {
-                                $type = false;
-                                break;
-                            }
-                        }
-
-                        if ($type && (
-                                $type == 'Point' || $type == 'LineString' || $type == 'Polygon'
-                            ))  {   // all geometries are of the same singular type
-
-                            $coords = [];   // combine all the coordinates
-                            foreach ($geoms as $g) {
-                                $coords[] = $g['coordinates'];
-                            }
-
-                            $geom = [   // return it as a Feature of a multiple type
-                                'type' => 'Feature',
-                                'geometry' => [
-                                    'type' => 'Multi' . $type,
-                                    'coordinates' => $coords
-                                ],
-                                'properties' => $properties
-                            ];
-                        }
-                        else {
-                            // if types are different, compile a FeatureCollection and return it
-                            $feats = [];
-                            foreach ($geoms as $g) {
-                                $feats[] = [
-                                    'type' => 'Feature',
-                                    'geometry' => $g,
-                                    'properties' => $properties
-                                ];
-                            }
-                            $geom = [
-                                'type' => 'FeatureCollection',
-                                'features' => $feats
-                            ];
-                        }*/
-                    }
-                    break;
-
-                case 'Feature':
-                case 'FeatureCollection':
-                    break;      // it is already a Feature; return unchanged
-
-                default:
-                    $geom = null;       // don't understand
-                    break;
-            }
-        }
-        return $geom;
+    /**
+     * @param $json
+     * @return mixed
+     */
+    public static function jsonToAddress($json)
+    {
+        $geom = geoPHP::load($json,'json');
+        return $geom->out('google_geocode');
     }
 
-    public static function featureToWkt($feat)  {
-        return static::geomToWkt(static::featureToGeom($feat));
+    /**
+     * @param $json
+     * @return mixed
+     */
+    public static function jsonToGpx($json)
+    {
+        $geom = geoPHP::load($json,'json');
+        return $geom->out('gpx');
     }
 
-    public static function wktToFeature($wkt, $properties = [])   {
-        return static::geomToFeature(static::wktToGeom($wkt), $properties);
+    /**
+     * @param $wkt
+     * @return mixed
+     */
+    public static function jsonToGeorss($wkt) {
+        $geom = geoPHP::load($json,'json');
+        return $geom->out('georss');
     }
 
-    public static function jsonToGeom($json)    {
-        return static::featureToGeom(Json::decode($json));
+    /**
+     * @param $kml
+     * @return mixed
+     */
+    public static function kmlToWkt($kml)
+    {
+        $geom = geoPHP::load($kml,'kml');
+        return $geom->out('wkt');
     }
 
-    public static function geomToJson($geom)    {
-        return Json::encode(static::geomToFeature($geom));
+    /**
+     * @param $kml
+     * @return mixed
+     */
+    public static function kmlToJson($kml)
+    {
+        $geom = geoPHP::load($kml,'kml');
+        return $geom->out('json');
     }
 
-/*    public static function featureCollToGeom($featureColl)  {
-        if ($featureColl['type'] == 'FeatureCollection') {
-            $points = [];
-            $lineStrings = [];
-            $polygons = [];
-
-            foreach ($featureColl['features'] as $feature)   {
-                $geom = $feature['geometry'];
-                $type = $geom['type'];
-                if ($type == 'GeometryCollection')  {
-
-                }
-                else {
-                    $data = $geom['coordinates'];
-                    switch ($geom['type']) {
-                        case 'Point':
-                            $points[] = $data;
-                            break;
-                        case 'MultiPoint':
-                            array_push($points, $data);
-                            break;
-                        case 'LineString':
-                            $lineStrings[] = $data;
-                            break;
-                        case 'MultiLineString':
-                            array_push($lineStrings, $data);
-                            break;
-                        case 'Polygon':
-                            $polygons[] = $data;
-                            break;
-                        case 'MultiPolygon':
-                            array_push($polygons, $data);
-                            break;
-                    }
-                }
-            }
-            $r = [];
-
-            switch (count($points)) {
-                case 0:
-                    break;
-                case 1:
-                    $r[] = [ 'type' => 'Point', 'coordinates' => current($points) ];
-                    break;
-                default:
-                    $r[] = [ 'type' => 'MultiPoint', 'coordinates' => $points ];
-                    break;
-            }
-
-            switch (count($lineStrings)) {
-                case 0:
-                    break;
-                case 1:
-                    $r[] = [ 'type' => 'LineString', 'coordinates' => current($lineStrings) ];
-                    break;
-                default:
-                    $r[] = [ 'type' => 'MultiLineString', 'coordinates' => $lineStrings ];
-                    break;
-            }
-
-            switch (count($polygons)) {
-                case 0:
-                    break;
-                case 1:
-                    $r[] = [ 'type' => 'Polygon', 'coordinates' => current($polygons) ];
-                    break;
-                default:
-                    $r[] = [ 'type' => 'MultiPolygon', 'coordinates' => $polygons ];
-                    break;
-            }
-
-            switch (count($r))  {
-                case 0:
-                    $featureColl = null;
-                    break;
-                case 1:
-                    $featureColl = $r;
-                    break;
-                default:
-                    $featureColl = [
-                        'type' => 'GeometryCollection',
-                        'geometries' => $r
-                    ];
-                    break;
-            }
-        }
-
-        return $featureColl;
-    }*/
-
-    protected static function revCoords($array)    {
-        if (is_array($array) && ! empty($array))    {
-            $item = $array[0];
-            if (is_array($item)) return array_map(function($v) { return static::revCoords($v); }, $array);
-            else return array_reverse($array);
-        }
-        return $array;
+    /**
+     * @param $kml
+     * @return mixed
+     */
+    public static function kmlToAddress($kml)
+    {
+        $geom = geoPHP::load($kml,'kml');
+        return $geom->out('google_geocode');
     }
 
-    public static function reverseCoordinates($array)    {
-        if (isset($array['geometries'])) $array['geometries'] = array_map(function($v) { return static::reverseCoordinates($v); }, $array['geometries']);
-        else if (isset($array['coordinates'])) $array['coordinates'] = static::revCoords($array['coordinates']);
-        return $array;
+    /**
+     * @param $kml
+     * @return mixed
+     */
+    public static function kmlToGpx($kml)
+    {
+        $geom = geoPHP::load($kml,'kml');
+        return $geom->out('gpx');
     }
-} 
+
+    /**
+     * @param $kml
+     * @return mixed
+     */
+    public static function kmlToGeorss($kml)
+    {
+        $geom = geoPHP::load($kml,'kml');
+        return $geom->out('georss');
+    }
+
+    /**
+     * @param $gpx
+     * @return mixed
+     */
+    public static function gpxToWkt($gpx)
+    {
+        $geom = geoPHP::load($gpx,'gpx');
+        return $geom->out('wkt');
+    }
+
+    /**
+     * @param $gpx
+     * @return mixed
+     */
+    public static function gpxToJson($gpx)
+    {
+        $geom = geoPHP::load($gpx,'gpx');
+        return $geom->out('json');
+    }
+
+    /**
+     * @param $gpx
+     * @return mixed
+     */
+    public static function gpxToKml($gpx)
+    {
+        $geom = geoPHP::load($gpx,'gpx');
+        return $geom->out('kml');
+    }
+
+    /**
+     * @param $gpx
+     * @return mixed
+     */
+    public static function gpxToGeorss($gpx)
+    {
+        $geom = geoPHP::load($gpx,'gpx');
+        return $geom->out('georss');
+    }
+
+    /**
+     * @param $gpx
+     * @return mixed
+     */
+    public static function gpxToAddress($gpx)
+    {
+        $geom = geoPHP::load($gpx,'gpx');
+        return $geom->out('google_geocode');
+    }
+
+    /**
+     * @param $georss
+     * @return mixed
+     */
+    public static function georssToWkt($georss)
+    {
+        $geom = geoPHP::load($georss,'georss');
+        return $geom->out('wkt');
+    }
+
+    /**
+     * @param $georss
+     * @return mixed
+     */
+    public static function georssToJson($georss)
+    {
+        $geom = geoPHP::load($georss,'georss');
+        return $geom->out('json');
+    }
+
+    /**
+     * @param $georss
+     * @return mixed
+     */
+    public static function georssToKml($georss)
+    {
+        $geom = geoPHP::load($georss,'georss');
+        return $geom->out('kml');
+    }
+
+    /**
+     * @param $georss
+     * @return mixed
+     */
+    public static function georssToGpx($georss)
+    {
+        $geom = geoPHP::load($georss,'georss');
+        return $geom->out('gpx');
+    }
+
+    /**
+     * @param $georss
+     * @return mixed
+     */
+    public static function georssToAddress($georss)
+    {
+        $geom = geoPHP::load($georss,'georss');
+        return $geom->out('google_geocode');
+    }
+
+    /**
+     * @param $address
+     * @return mixed
+     */
+    public static function addressToWkt($address)
+    {
+        $geom = geoPHP::load($address,'google_geocode');
+        return $geom->out('wkt');
+    }
+
+    /**
+     * @param $address
+     * @return mixed
+     */
+    public static function addressToJson($address)
+    {
+        $geom = geoPHP::load($address,'google_geocode');
+        return $geom->out('json');
+    }
+
+    /**
+     * @param $address
+     * @return mixed
+     */
+    public static function addressToKml($address)
+    {
+        $geom = geoPHP::load($address,'google_geocode');
+        return $geom->out('kml');
+    }
+
+    /**
+     * @param $address
+     * @return mixed
+     */
+    public static function addressToGpx($address)
+    {
+        $geom = geoPHP::load($address,'google_geocode');
+        return $geom->out('gpx');
+    }
+
+    /**
+     * @param $address
+     * @return mixed
+     */
+    public static function addressToGeorss($address)
+    {
+        $geom = geoPHP::load($address,'google_geocode');
+        return $geom->out('georss');
+    }
+}

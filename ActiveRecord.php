@@ -16,6 +16,8 @@ use yii\db\Expression;
 use yii\helpers\Json;
 use yii\db\ActiveRecord as YiiActiveRecord;
 use yii\base\InvalidCallException;
+use geoPHP;
+
 
 class ActiveRecord extends YiiActiveRecord {
     /** @var  float - virtual attribute used by ActiveQuery::nearest() */
@@ -53,8 +55,7 @@ class ActiveRecord extends YiiActiveRecord {
 
                     if ($attr)  {
                         $this->_saved[$field] = $attr;
-                        $feature = Json::decode($attr);
-                        $wkt = SpatialHelper::featureToWkt($feature);
+                        $wkt = SpatialHelper::geomToWkt($attr);
                         $this->setAttribute($field, new Expression("GeomFromText('$wkt')"));
                     }
                 }
@@ -85,26 +86,7 @@ class ActiveRecord extends YiiActiveRecord {
                     }
                     $geom = SpatialHelper::wktToGeom($attr);
 
-                    // Transform geometry FeatureCollection...
-                    if ($geom['type'] == 'GeometryCollection')  {
-                        $feats = [];
-                        foreach ($geom['geometries'] as $g) {
-                            $feats[] = [
-                                'type' => 'Feature',
-                                'geometry' => $g,
-                                'properties' => $this->featureProperties($field, $g)
-                            ];
-                        }
-                        $feature = [
-                            'type' => 'FeatureCollection',
-                            'features' => $feats
-                        ];
-                    }
-                    else {  // ... or to Feature
-                        $feature = SpatialHelper::geomToFeature($geom, $this->featureProperties($field, $geom));
-                    }
-
-                    $this->setAttribute($field, Json::encode($feature));
+                    $this->setAttribute($field, $geom);
                 }
             }
         }
