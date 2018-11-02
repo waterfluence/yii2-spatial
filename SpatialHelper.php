@@ -26,6 +26,19 @@ use yii\helpers\Json;
 use geoPHP;
 
 abstract class SpatialHelper { // declare abstract, we don't want instances (trick from Zend)
+    /**
+     * geom contains stdClass. Sometimes
+     * we need to know that we have a pure
+     * array to work with.
+     *
+     * @param $geom
+     * @return mixed
+     */
+    public static function geomToArray($geom)
+    {
+        return json_decode(json_encode($geom), true);
+    }
+
 
     /**
      * @param $wkt
