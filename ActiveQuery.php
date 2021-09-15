@@ -1,8 +1,8 @@
 <?php
 /**
  * MIT licence
- * Version 1.0.0
- * Sjaak Priester, Amsterdam 21-06-2014 ... 21-11-2015.
+ * Version 1.1.1
+ * Sjaak Priester, Amsterdam 21-06-2014 ... 19-05-2019.
  *
  * ActiveRecord with spatial attributes in Yii 2.0 framework
  *
@@ -13,6 +13,10 @@ namespace sjaakp\spatial;
 
 use yii\db\ActiveQuery as YiiActiveQuery;
 
+/**
+ * Class ActiveQuery
+ * @package sjaakp\spatial
+ */
 class ActiveQuery extends YiiActiveQuery {
 
     /**
@@ -32,6 +36,7 @@ class ActiveQuery extends YiiActiveQuery {
      *
      * @link http://www.plumislandmedia.net/mysql/haversine-mysql-nearest-loc/
      * @link https://en.wikipedia.org/wiki/Haversine_formula
+     * @link https://stackoverflow.com/questions/28254863/mysql-geospacial-search-using-haversine-formula-returns-null-on-same-point (thanks: fpolito)
      */
     public function nearest($from, $attribute, $radius = 100)    {
         $lenPerDegree = 111.045;    // km per degree latitude; for miles, use 69.0
@@ -53,8 +58,8 @@ class ActiveQuery extends YiiActiveQuery {
         $subQuery = $this->create($this)->from($modelCls::tableName())
             ->select([
                 '*',
-                '_lng' => "X({$attribute})",
-                '_lat' => "Y({$attribute})",
+                '_lng' => "ST_X({$attribute})",
+                '_lat' => "ST_Y({$attribute})",
             ])
             ->having([ 'between', '_lng', $lng - $dLng, $lng + $dLng ])
             ->andHaving([ 'between', '_lat', $lat - $dLat, $lat + $dLat ]);
@@ -63,7 +68,7 @@ class ActiveQuery extends YiiActiveQuery {
             ->select([
                 '*',
 //                '_d' => "SQRT(POW(_lng-:lg,2)+POW(_lat-:lt,2))*{$lenPerDeg}"    // Pythagoras
-                '_d' => "{$lenPerDegree}*DEGREES(ACOS(COS(RADIANS(:lt))*COS(RADIANS(_lat))*COS(RADIANS(:lg)-RADIANS(_lng))+SIN(RADIANS(:lt))*SIN(RADIANS(_lat))))"     // Haversine
+                '_d' => "{$lenPerDegree}*DEGREES( IFNULL(ACOS(COS(RADIANS(:lt))*COS(RADIANS(_lat))*COS(RADIANS(:lg)-RADIANS(_lng))+SIN(RADIANS(:lt))*SIN(RADIANS(_lat))),0))"  // Haversine
             ])
             ->params([
                 ':lg' => $lng,
@@ -87,6 +92,11 @@ class ActiveQuery extends YiiActiveQuery {
 
     protected $_skipPrep = false;
 
+    /**
+     * @param $selectExpression
+     * @param $db
+     * @return bool|false|string|null
+     */
     protected function queryScalar($selectExpression, $db)  {
         $this->_skipPrep = true;
         $r = parent::queryScalar($selectExpression, $db);
@@ -94,6 +104,11 @@ class ActiveQuery extends YiiActiveQuery {
         return $r;
     }
 
+    /**
+     * @param $builder
+     * @return YiiActiveQuery|\yii\db\Query
+     * @throws \yii\base\InvalidConfigException
+     */
     public function prepare($builder)    {
         if (! $this->_skipPrep) {   // skip in case of queryScalar; it's not needed, and we get an SQL error (duplicate column names)
             if (empty($this->select))   {
@@ -111,7 +126,7 @@ class ActiveQuery extends YiiActiveQuery {
                     else {
                         $column = $schema->getColumn($field);
                         if (ActiveRecord::isSpatial($column)) {
-                            $this->addSelect(["AsText($field) AS $field"]);
+                            $this->addSelect(["ST_AsText($field) AS $field"]);
                         }
                     }
                 }
@@ -120,6 +135,9 @@ class ActiveQuery extends YiiActiveQuery {
         return parent::prepare($builder);
     }
 
+    /**
+     * @throws \yii\base\InvalidConfigException
+     */
     protected function allColumns() {
         /** @var ActiveRecord $modelClass */
         $modelClass = $this->modelClass;
