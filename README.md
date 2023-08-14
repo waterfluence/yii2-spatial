@@ -5,9 +5,9 @@ ActiveRecord with spatial attributes. Those attributes are transformed from the 
 
 **Yii-spatial** can also be used to find the model or models which are nearest to a given location.
 
-**Notice that this extension is intended to be used with a MySQL or MariaDB database exclusively.**
+**Notice that this extension is intended to be used with a MySQL database exclusively.**
 
-Version 1.1.0 is compatible with MySQL 5.7 and MariaDB 10.3.
+Version 1.1.1 is compatible with MySQL 8.x
 
 ## Installation ##
 

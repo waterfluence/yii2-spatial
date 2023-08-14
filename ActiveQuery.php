@@ -145,7 +145,7 @@ class ActiveQuery extends YiiActiveQuery {
         foreach ($schema->columns as $column)   {
             if (ActiveRecord::isSpatial($column)) {
                 $field = $column->name;
-                $this->addSelect(["AsText($field) AS $field"]);
+                $this->addSelect(["ST_AsText($field) AS $field"]);
             }
         }
     }
