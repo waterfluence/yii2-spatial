@@ -17,8 +17,8 @@ use yii\db\ActiveQuery as YiiActiveQuery;
  * Class ActiveQuery
  * @package sjaakp\spatial
  */
-class ActiveQuery extends YiiActiveQuery {
-
+class ActiveQuery extends YiiActiveQuery
+{
     /**
      * @param $from - string|array
      *      string: GeoJson representation of POINT
@@ -38,14 +38,19 @@ class ActiveQuery extends YiiActiveQuery {
      * @link https://en.wikipedia.org/wiki/Haversine_formula
      * @link https://stackoverflow.com/questions/28254863/mysql-geospacial-search-using-haversine-formula-returns-null-on-same-point (thanks: fpolito)
      */
-    public function nearest($from, $attribute, $radius = 100)    {
+    public function nearest($from, $attribute, $radius = 100)
+    {
         $lenPerDegree = 111.045;    // km per degree latitude; for miles, use 69.0
 
-        if (is_string($from))   {
+        if (is_string($from)) {
             $feat = SpatialHelper::jsonToGeom($from);
-            if ($feat && $feat['type'] == 'Point') $from = $feat['coordinates'];
+            if ($feat && $feat['type'] == 'Point') {
+                $from = $feat['coordinates'];
+            }
         }
-        if (! is_array($from)) return $this;
+        if (! is_array($from)) {
+            return $this;
+        }
         $lng = $from[0];
         $lat = $from[1];
 
@@ -97,7 +102,8 @@ class ActiveQuery extends YiiActiveQuery {
      * @param $db
      * @return bool|false|string|null
      */
-    protected function queryScalar($selectExpression, $db)  {
+    protected function queryScalar($selectExpression, $db)
+    {
         $this->_skipPrep = true;
         $r = parent::queryScalar($selectExpression, $db);
         $this->_skipPrep = false;
@@ -109,21 +115,20 @@ class ActiveQuery extends YiiActiveQuery {
      * @return YiiActiveQuery|\yii\db\Query
      * @throws \yii\base\InvalidConfigException
      */
-    public function prepare($builder)    {
+    public function prepare($builder)
+    {
         if (! $this->_skipPrep) {   // skip in case of queryScalar; it's not needed, and we get an SQL error (duplicate column names)
-            if (empty($this->select))   {
+            if (empty($this->select)) {
                 $this->select('*');
                 $this->allColumns();
-            }
-            else   {
+            } else {
                 /** @var ActiveRecord $modelClass */
                 $modelClass = $this->modelClass;
                 $schema = $modelClass::getTableSchema();
-                foreach ($this->select as $field)   {
-                    if ($field == '*')  {
+                foreach ($this->select as $field) {
+                    if ($field == '*') {
                         $this->allColumns();
-                    }
-                    else {
+                    } else {
                         $column = $schema->getColumn($field);
                         if (ActiveRecord::isSpatial($column)) {
                             $this->addSelect(["ST_AsText($field) AS $field"]);
@@ -138,11 +143,12 @@ class ActiveQuery extends YiiActiveQuery {
     /**
      * @throws \yii\base\InvalidConfigException
      */
-    protected function allColumns() {
+    protected function allColumns()
+    {
         /** @var ActiveRecord $modelClass */
         $modelClass = $this->modelClass;
         $schema = $modelClass::getTableSchema();
-        foreach ($schema->columns as $column)   {
+        foreach ($schema->columns as $column) {
             if (ActiveRecord::isSpatial($column)) {
                 $field = $column->name;
                 $this->addSelect(["ST_AsText($field) AS $field"]);

@@ -21,7 +21,8 @@ use yii\base\InvalidCallException;
  * Class ActiveRecord
  * @package sjaakp\spatial
  */
-class ActiveRecord extends YiiActiveRecord {
+class ActiveRecord extends YiiActiveRecord
+{
     /** @var  float - virtual attribute used by ActiveQuery::nearest() */
     public $_d;
 
@@ -29,11 +30,13 @@ class ActiveRecord extends YiiActiveRecord {
      * @return object|\yii\db\ActiveQuery
      * @throws \yii\base\InvalidConfigException
      */
-    public static function find()    {
+    public static function find()
+    {
         return Yii::createObject(ActiveQuery::class, [get_called_class()]);
     }
 
-    public static function isSpatial($column)   {
+    public static function isSpatial($column)
+    {
         $spatialFields = [
             'point',
             'linestring',
@@ -55,16 +58,17 @@ class ActiveRecord extends YiiActiveRecord {
      * @return bool
      * @throws \yii\base\InvalidConfigException
      */
-    public function beforeSave($insert)    {
+    public function beforeSave($insert)
+    {
         $r = parent::beforeSave($insert);
         if ($r) {
             $scheme = static::getTableSchema();
-            foreach ($scheme->columns as $column)   {
-                if (static::isSpatial($column))   {
+            foreach ($scheme->columns as $column) {
+                if (static::isSpatial($column)) {
                     $field = $column->name;
                     $attr = $this->getAttribute($field);
 
-                    if ($attr)  {
+                    if ($attr) {
                         $this->_saved[$field] = $attr;
                         $wkt = SpatialHelper::geomToWkt($attr);
                         $this->setAttribute($field, new Expression("ST_GeomFromText('$wkt')"));
@@ -79,25 +83,28 @@ class ActiveRecord extends YiiActiveRecord {
      * @param bool $insert
      * @param array $changedAttributes
      */
-    public function afterSave($insert, $changedAttributes)    {
-        foreach ($this->_saved as $field => $attr)
+    public function afterSave($insert, $changedAttributes)
+    {
+        foreach ($this->_saved as $field => $attr) {
             $this->setAttribute($field, $attr);
+        }
         parent::afterSave($insert, $changedAttributes);
     }
 
     /**
      * @throws \yii\base\InvalidConfigException
      */
-    public function afterFind()    {
+    public function afterFind()
+    {
         parent::afterFind();
 
         $scheme = static::getTableSchema();
-        foreach ($scheme->columns as $column)   {
-            if (static::isSpatial($column))   {
+        foreach ($scheme->columns as $column) {
+            if (static::isSpatial($column)) {
                 $field = $column->name;
                 $attr = $this->getAttribute($field);    // get WKT
-                if ($attr)  {
-                    if (YII_DEBUG && preg_match( '/[\\x80-\\xff]+/' , $attr ))   {
+                if ($attr) {
+                    if (YII_DEBUG && preg_match('/[\\x80-\\xff]+/', $attr)) {
                         /* If you get an exception here, it probably means you have overridden find()
                              and did not return sjaakp\spatial\ActiveQuery. */
                         throw new InvalidCallException('Spatial attribute not converted.');
@@ -116,7 +123,8 @@ class ActiveRecord extends YiiActiveRecord {
      * @param $geometry
      * @return array
      */
-    public function featureProperties($field, $geometry)  {
+    public function featureProperties($field, $geometry)
+    {
         return [ 'id' => $this->getPrimaryKey() ];
     }
 }

@@ -22,10 +22,10 @@ namespace sjaakp\spatial;
  * @link http://dev.mysql.com/doc/refman/5.6/en/gis-data-formats.html#gis-wkt-format
  *
  */
-use yii\helpers\Json;
 use geoPHP\geoPHP;
 
-abstract class SpatialHelper { // declare abstract, we don't want instances (trick from Zend)
+abstract class SpatialHelper
+{ // declare abstract, we don't want instances (trick from Zend)
     /**
      * geom contains stdClass. Sometimes
      * we need to know that we have a pure
@@ -71,7 +71,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function wktToJson($wkt)
     {
-        $geom = geoPHP::load($wkt,'wkt');
+        $geom = geoPHP::load($wkt, 'wkt');
         return $geom->out('json');
     }
 
@@ -81,7 +81,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function jsonToWkt($json)
     {
-        $geom = geoPHP::load($json,'json');
+        $geom = geoPHP::load($json, 'json');
         return $geom->out('wkt');
     }
 
@@ -91,7 +91,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function wktToKml($wkt)
     {
-        $geom = geoPHP::load($wkt,'wkt');
+        $geom = geoPHP::load($wkt, 'wkt');
         return $geom->out('kml');
     }
 
@@ -101,7 +101,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function wktToAaddress($wkt)
     {
-        $geom = geoPHP::load($wkt,'wkt');
+        $geom = geoPHP::load($wkt, 'wkt');
         return $geom->out('google_geocode');
     }
 
@@ -111,7 +111,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function wktToGpx($wkt)
     {
-        $geom = geoPHP::load($wkt,'wkt');
+        $geom = geoPHP::load($wkt, 'wkt');
         return $geom->out('gpx');
     }
 
@@ -121,7 +121,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function wktToGeorss($wkt)
     {
-        $geom = geoPHP::load($wkt,'wkt');
+        $geom = geoPHP::load($wkt, 'wkt');
         return $geom->out('georss');
     }
 
@@ -129,8 +129,9 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      * @param $json
      * @return mixed
      */
-    public static function jsonToKml($json) {
-        $geom = geoPHP::load($json,'json');
+    public static function jsonToKml($json)
+    {
+        $geom = geoPHP::load($json, 'json');
         return $geom->out('kml');
     }
 
@@ -140,7 +141,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function jsonToAddress($json)
     {
-        $geom = geoPHP::load($json,'json');
+        $geom = geoPHP::load($json, 'json');
         return $geom->out('google_geocode');
     }
 
@@ -150,7 +151,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function jsonToGpx($json)
     {
-        $geom = geoPHP::load($json,'json');
+        $geom = geoPHP::load($json, 'json');
         return $geom->out('gpx');
     }
 
@@ -158,8 +159,9 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      * @param $wkt
      * @return mixed
      */
-    public static function jsonToGeorss($wkt) {
-        $geom = geoPHP::load($json,'json');
+    public static function jsonToGeorss($wkt)
+    {
+        $geom = geoPHP::load($json, 'json');
         return $geom->out('georss');
     }
 
@@ -169,7 +171,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function kmlToWkt($kml)
     {
-        $geom = geoPHP::load($kml,'kml');
+        $geom = geoPHP::load($kml, 'kml');
         return $geom->out('wkt');
     }
 
@@ -179,7 +181,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function kmlToJson($kml)
     {
-        $geom = geoPHP::load($kml,'kml');
+        $geom = geoPHP::load($kml, 'kml');
         return $geom->out('json');
     }
 
@@ -189,7 +191,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function kmlToAddress($kml)
     {
-        $geom = geoPHP::load($kml,'kml');
+        $geom = geoPHP::load($kml, 'kml');
         return $geom->out('google_geocode');
     }
 
@@ -199,7 +201,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function kmlToGpx($kml)
     {
-        $geom = geoPHP::load($kml,'kml');
+        $geom = geoPHP::load($kml, 'kml');
         return $geom->out('gpx');
     }
 
@@ -209,7 +211,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function kmlToGeorss($kml)
     {
-        $geom = geoPHP::load($kml,'kml');
+        $geom = geoPHP::load($kml, 'kml');
         return $geom->out('georss');
     }
 
@@ -219,7 +221,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function gpxToWkt($gpx)
     {
-        $geom = geoPHP::load($gpx,'gpx');
+        $geom = geoPHP::load($gpx, 'gpx');
         return $geom->out('wkt');
     }
 
@@ -229,7 +231,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function gpxToJson($gpx)
     {
-        $geom = geoPHP::load($gpx,'gpx');
+        $geom = geoPHP::load($gpx, 'gpx');
         return $geom->out('json');
     }
 
@@ -239,7 +241,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function gpxToKml($gpx)
     {
-        $geom = geoPHP::load($gpx,'gpx');
+        $geom = geoPHP::load($gpx, 'gpx');
         return $geom->out('kml');
     }
 
@@ -249,7 +251,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function gpxToGeorss($gpx)
     {
-        $geom = geoPHP::load($gpx,'gpx');
+        $geom = geoPHP::load($gpx, 'gpx');
         return $geom->out('georss');
     }
 
@@ -259,7 +261,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function gpxToAddress($gpx)
     {
-        $geom = geoPHP::load($gpx,'gpx');
+        $geom = geoPHP::load($gpx, 'gpx');
         return $geom->out('google_geocode');
     }
 
@@ -269,7 +271,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function georssToWkt($georss)
     {
-        $geom = geoPHP::load($georss,'georss');
+        $geom = geoPHP::load($georss, 'georss');
         return $geom->out('wkt');
     }
 
@@ -279,7 +281,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function georssToJson($georss)
     {
-        $geom = geoPHP::load($georss,'georss');
+        $geom = geoPHP::load($georss, 'georss');
         return $geom->out('json');
     }
 
@@ -289,7 +291,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function georssToKml($georss)
     {
-        $geom = geoPHP::load($georss,'georss');
+        $geom = geoPHP::load($georss, 'georss');
         return $geom->out('kml');
     }
 
@@ -299,7 +301,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function georssToGpx($georss)
     {
-        $geom = geoPHP::load($georss,'georss');
+        $geom = geoPHP::load($georss, 'georss');
         return $geom->out('gpx');
     }
 
@@ -309,7 +311,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function georssToAddress($georss)
     {
-        $geom = geoPHP::load($georss,'georss');
+        $geom = geoPHP::load($georss, 'georss');
         return $geom->out('google_geocode');
     }
 
@@ -319,7 +321,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function addressToWkt($address)
     {
-        $geom = geoPHP::load($address,'google_geocode');
+        $geom = geoPHP::load($address, 'google_geocode');
         return $geom->out('wkt');
     }
 
@@ -329,7 +331,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function addressToJson($address)
     {
-        $geom = geoPHP::load($address,'google_geocode');
+        $geom = geoPHP::load($address, 'google_geocode');
         return $geom->out('json');
     }
 
@@ -339,7 +341,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function addressToKml($address)
     {
-        $geom = geoPHP::load($address,'google_geocode');
+        $geom = geoPHP::load($address, 'google_geocode');
         return $geom->out('kml');
     }
 
@@ -349,7 +351,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function addressToGpx($address)
     {
-        $geom = geoPHP::load($address,'google_geocode');
+        $geom = geoPHP::load($address, 'google_geocode');
         return $geom->out('gpx');
     }
 
@@ -359,7 +361,7 @@ abstract class SpatialHelper { // declare abstract, we don't want instances (tri
      */
     public static function addressToGeorss($address)
     {
-        $geom = geoPHP::load($address,'google_geocode');
+        $geom = geoPHP::load($address, 'google_geocode');
         return $geom->out('georss');
     }
 }
