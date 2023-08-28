@@ -23,7 +23,7 @@ namespace sjaakp\spatial;
  *
  */
 use yii\helpers\Json;
-use geoPHP;
+use geoPHP\geoPHP;
 
 abstract class SpatialHelper { // declare abstract, we don't want instances (trick from Zend)
     /**

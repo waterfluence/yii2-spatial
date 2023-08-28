@@ -11,9 +11,15 @@
             "homepage": "http://sjaakpriester.nl"
         }
     ],
+    "repositories": {
+        "wgirhad/geophp": {
+            "type": "vcs",
+            "url": "git://github.com/waterfluence/geoPHP.git"
+        }
+    },
     "require": {
         "yiisoft/yii2": "*",
-        "geophp/geophp": "dev-master"
+        "wgirhad/geophp": "dev-main"
     },
     "autoload": {
         "psr-4": {

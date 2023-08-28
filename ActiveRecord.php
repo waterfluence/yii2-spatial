@@ -16,7 +16,6 @@ use yii\db\Expression;
 use yii\helpers\Json;
 use yii\db\ActiveRecord as YiiActiveRecord;
 use yii\base\InvalidCallException;
-use geoPHP;
 
 /**
  * Class ActiveRecord
