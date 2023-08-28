@@ -11,9 +11,9 @@
 
 namespace sjaakp\spatial;
 
+use geoPHP\Geometry\Geometry;
 use Yii;
 use yii\db\Expression;
-use yii\helpers\Json;
 use yii\db\ActiveRecord as YiiActiveRecord;
 use yii\base\InvalidCallException;
 
@@ -70,7 +70,7 @@ class ActiveRecord extends YiiActiveRecord
 
                     if ($attr) {
                         $this->_saved[$field] = $attr;
-                        $wkt = SpatialHelper::geomToWkt($attr);
+                        $wkt = is_a($attr, Geometry::class) ? $attr->out('wkt') : SpatialHelper::geomToWkt($attr);
                         $this->setAttribute($field, new Expression("ST_GeomFromText('$wkt')"));
                     }
                 }
