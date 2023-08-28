@@ -13,7 +13,7 @@
     ],
     "require": {
         "yiisoft/yii2": "*",
-        "phayes/geophp": "dev-master"
+        "geophp/geophp": "dev-master"
     },
     "autoload": {
         "psr-4": {
