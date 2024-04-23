@@ -12,14 +12,14 @@
         }
     ],
     "repositories": {
-        "wgirhad/geophp": {
+        "funiq/geophp": {
             "type": "vcs",
             "url": "git://github.com/waterfluence/geoPHP.git"
         }
     },
     "require": {
         "yiisoft/yii2": "*",
-        "wgirhad/geophp": "dev-main"
+        "funiq/geophp": "v2.0.3"
     },
     "autoload": {
         "psr-4": {
